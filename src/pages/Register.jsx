@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaClock } from 'react-icons/fa';
 import { GoogleLogin } from '@react-oauth/google';
+import CustomGoogleAuth from '../components/CustomGoogleAuth';
 import { toast } from 'react-toastify';
 
 const Register = () => {
@@ -132,17 +133,8 @@ const Register = () => {
                         <div className="border-t border-gray-200 dark:border-gray-700/60 w-full"></div>
                     </div>
 
-                    <div className="mt-6 flex justify-center">
-                        {/* Note: This button is personalized by Google based on your local browser session.
-                            Other users will see their own account or a generic "Sign up with Google" button. */}
-                        <GoogleLogin
-                            onSuccess={handleGoogleSuccess}
-                            onError={handleGoogleError}
-                            theme="outline"
-                            shape="rectangular"
-                            text="signup_with"
-                            width="250"
-                        />
+                    <div className="mt-6 flex justify-center w-full">
+                        <CustomGoogleAuth mode="signup" />
                     </div>
 
                     <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">

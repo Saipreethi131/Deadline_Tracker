@@ -54,9 +54,9 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const googleLogin = async (token) => {
+    const googleLogin = async (token, tokenType = 'id_token') => {
         try {
-            const { data } = await API.post('/auth/google', { token });
+            const { data } = await API.post('/auth/google', { token, tokenType });
             localStorage.setItem('user', JSON.stringify(data));
             setUser(data);
             toast.success('Google Login successful!');

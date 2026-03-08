@@ -74,26 +74,42 @@ const loginUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/google
 // @access  Public
 const googleAuth = asyncHandler(async (req, res) => {
-    const { token } = req.body;
+    const { token, tokenType } = req.body;
 
     if (!token) {
         res.status(400);
         throw new Error('No Google token provided');
     }
 
-    let ticket;
-    try {
-        ticket = await client.verifyIdToken({
-            idToken: token,
-            audience: process.env.GOOGLE_CLIENT_ID,
-        });
-    } catch (err) {
-        res.status(401);
-        throw new Error('Invalid Google Token');
+    let payload;
+
+    if (tokenType === 'access_token') {
+        // Handle custom button flow (Access Token)
+        try {
+            const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+            if (!response.ok) {
+                throw new Error('Failed to verify access token');
+            }
+            payload = await response.json();
+        } catch (err) {
+            res.status(401);
+            throw new Error('Invalid Google Access Token');
+        }
+    } else {
+        // Handle standard component flow (ID Token)
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            payload = ticket.getPayload();
+        } catch (err) {
+            res.status(401);
+            throw new Error('Invalid Google ID Token');
+        }
     }
 
-    const payload = ticket.getPayload();
-    const { sub, email, name, picture } = payload; // sub is the googleId
+    const { email, name } = payload;
 
     let user = await User.findOne({ email });
 
