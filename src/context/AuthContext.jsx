@@ -54,14 +54,38 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const googleLogin = async (token) => {
+        try {
+            const { data } = await API.post('/auth/google', { token });
+            localStorage.setItem('user', JSON.stringify(data));
+            setUser(data);
+            toast.success('Google Login successful!');
+            return data;
+        } catch (error) {
+            const message =
+                (error.response &&
+                    error.response.data &&
+                    error.response.data.message) ||
+                error.message ||
+                error.toString();
+            toast.error(message);
+            throw error;
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('user');
         setUser(null);
         toast.info('Logged out');
     };
 
+    const updateUser = (updatedData) => {
+        localStorage.setItem('user', JSON.stringify(updatedData));
+        setUser(updatedData);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, register, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, register, login, googleLogin, logout, updateUser, loading }}>
             {children}
         </AuthContext.Provider>
     );

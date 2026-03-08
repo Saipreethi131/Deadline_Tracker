@@ -9,6 +9,10 @@ const cors = require('cors');
 // Connect to database
 connectDB();
 
+// Start email reminder scheduler
+const { startReminderScheduler } = require('./services/reminderScheduler');
+startReminderScheduler();
+
 const app = express();
 
 app.use(express.json());
@@ -25,7 +29,7 @@ app.use(cors({
         }
         callback(new Error('Not allowed by CORS'));
     },
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -37,6 +41,8 @@ app.get('/', (req, res) => {
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/deadlines', require('./routes/deadlineRoutes'));
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
+app.use('/api/gamification', require('./routes/gamificationRoutes'));
 
 app.use(errorHandler);
 

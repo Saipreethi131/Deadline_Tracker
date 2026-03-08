@@ -9,11 +9,11 @@ const COLUMN_COLORS = {
     Custom: { dot: 'bg-pink-500', count: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300' },
 };
 
-const DeadlineColumn = ({ title, deadlines, onEdit, onDelete, onStatusChange }) => {
+const DeadlineColumn = ({ title, deadlines, onEdit, onDelete, onStatusChange, onCardClick }) => {
     const colors = COLUMN_COLORS[title] || { dot: 'bg-gray-400', count: 'bg-gray-100 text-gray-600' };
 
     return (
-        <div className="flex-1 min-w-[290px] max-w-sm flex flex-col snap-start">
+        <div className="flex-1 flex flex-col">
             {/* Column Header */}
             <div className="flex items-center justify-between mb-3 px-1">
                 <div className="flex items-center gap-2">
@@ -37,6 +37,7 @@ const DeadlineColumn = ({ title, deadlines, onEdit, onDelete, onStatusChange }) 
                             onEdit={onEdit}
                             onDelete={onDelete}
                             onStatusChange={onStatusChange}
+                            onCardClick={onCardClick}
                         />
                     ))
                 ) : (

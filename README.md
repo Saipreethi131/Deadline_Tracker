@@ -146,13 +146,16 @@ VITE_API_BASE_URL=http://localhost:5000/api
 - [x] Dark mode
 - [x] Priority & status system
 - [x] Stats overview cards
-- [ ] Email reminders (Node-Cron + Nodemailer)
-- [ ] Analytics dashboard (Recharts)
+- [x] Email reminders (Node-Cron + Nodemailer)
+- [x] **Collaborative Deadlines** (Invite, Accept/Reject flow)
+- [x] **Email Verification (OTP)** for profile updates
+- [x] **Sub-task Progress Support** with dynamic checklists
 - [ ] Drag & drop Kanban
 - [ ] PDF/CSV export
-- [ ] Google OAuth
+- [x] Google OAuth (Backend support ready)
 - [ ] PWA support
 - [ ] Docker + CI/CD
+- [ ] Analytics dashboard (Recharts)
 
 ---
 

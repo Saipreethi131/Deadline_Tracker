@@ -1,14 +1,28 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaArrowRight } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaArrowRight, FaClock } from 'react-icons/fa';
+import { GoogleLogin } from '@react-oauth/google';
+import { toast } from 'react-toastify';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const { email, password } = formData;
-    const { login, user, loading } = useAuth();
+    const { login, googleLogin, user, loading } = useAuth();
     const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
+
+    const handleGoogleSuccess = async (credentialResponse) => {
+        try {
+            await googleLogin(credentialResponse.credential);
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const handleGoogleError = () => {
+        toast.error('Google Sign-In failed.');
+    };
 
     useEffect(() => {
         if (user) navigate('/');
@@ -45,10 +59,13 @@ const Login = () => {
 
                 {/* Header */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-300/30 dark:shadow-indigo-700/30 mb-4">
-                        <FaLock className="text-white text-xl" />
+                    <div className="flex items-center justify-center gap-2.5 mb-6">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-300/50 dark:shadow-indigo-700/50 transition-all duration-300">
+                            <FaClock className="text-white text-xl" />
+                        </div>
+                        <span className="text-3xl font-extrabold gradient-text">DeadlinePro</span>
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome back</h1>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Welcome back</h1>
                     <p className="text-gray-500 dark:text-gray-400 mt-1.5 text-sm">Sign in to track your deadlines</p>
                 </div>
 
@@ -110,6 +127,21 @@ const Login = () => {
                             )}
                         </button>
                     </form>
+
+                    <div className="mt-6 flex items-center justify-center">
+                        <div className="border-t border-gray-200 dark:border-gray-700/60 w-full"></div>
+                        <span className="bg-white dark:bg-gray-800 px-4 text-xs text-gray-400 font-medium tracking-wider uppercase">or</span>
+                        <div className="border-t border-gray-200 dark:border-gray-700/60 w-full"></div>
+                    </div>
+
+                    <div className="mt-6 flex justify-center">
+                        <GoogleLogin
+                            onSuccess={handleGoogleSuccess}
+                            onError={handleGoogleError}
+                            theme="filled_blue"
+                            shape="pill"
+                        />
+                    </div>
 
                     <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
                         Don't have an account?{' '}
