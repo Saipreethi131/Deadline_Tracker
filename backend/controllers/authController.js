@@ -92,7 +92,7 @@ const googleAuth = asyncHandler(async (req, res) => {
         } catch (err) {
             console.error('Google Access Token verification failed:', err.response?.data || err.message);
             res.status(401);
-            throw new Error('Invalid Google Access Token');
+            throw new Error('Invalid Google Access Token (V4-NEW-CODE)');
         }
     } else {
         // Handle standard component flow (ID Token)
@@ -104,7 +104,7 @@ const googleAuth = asyncHandler(async (req, res) => {
             payload = ticket.getPayload();
         } catch (err) {
             res.status(401);
-            throw new Error('Invalid Google ID Token');
+            throw new Error('Invalid Google ID Token (V4-NEW-CODE)');
         }
     }
 
