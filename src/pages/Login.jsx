@@ -135,11 +135,15 @@ const Login = () => {
                     </div>
 
                     <div className="mt-6 flex justify-center">
+                        {/* Note: This button is personalized by Google based on your local browser session.
+                            Other users will see their own account or a generic "Sign in with Google" button. */}
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
                             onError={handleGoogleError}
-                            theme="filled_blue"
-                            shape="pill"
+                            theme="outline"
+                            shape="rectangular"
+                            text="signin_with"
+                            width="250"
                         />
                     </div>
 

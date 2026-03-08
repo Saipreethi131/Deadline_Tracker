@@ -133,12 +133,15 @@ const Register = () => {
                     </div>
 
                     <div className="mt-6 flex justify-center">
+                        {/* Note: This button is personalized by Google based on your local browser session.
+                            Other users will see their own account or a generic "Sign up with Google" button. */}
                         <GoogleLogin
                             onSuccess={handleGoogleSuccess}
                             onError={handleGoogleError}
-                            theme="filled_blue"
-                            shape="pill"
+                            theme="outline"
+                            shape="rectangular"
                             text="signup_with"
+                            width="250"
                         />
                     </div>
 
