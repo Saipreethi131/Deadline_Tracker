@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
 const { OAuth2Client } = require('google-auth-library');
 const { sendWelcomeEmail } = require('../services/emailService');
+const axios = require('axios');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -86,12 +87,10 @@ const googleAuth = asyncHandler(async (req, res) => {
     if (tokenType === 'access_token') {
         // Handle custom button flow (Access Token)
         try {
-            const response = await fetch(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
-            if (!response.ok) {
-                throw new Error('Failed to verify access token');
-            }
-            payload = await response.json();
+            const response = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
+            payload = response.data;
         } catch (err) {
+            console.error('Google Access Token verification failed:', err.response?.data || err.message);
             res.status(401);
             throw new Error('Invalid Google Access Token');
         }
