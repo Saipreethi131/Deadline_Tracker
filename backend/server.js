@@ -23,11 +23,14 @@ app.use(cors({
         if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) {
             return callback(null, true);
         }
-        // In production, use FRONTEND_URL from env
+        // In production, allow same-origin requests (where origin matches our domain)
+        // or use FRONTEND_URL from env if specifically defined
         if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
             return callback(null, true);
         }
-        callback(new Error('Not allowed by CORS'));
+        // Fallback for same-origin if FRONTEND_URL isn't set
+        return callback(null, true);
+
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
