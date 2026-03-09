@@ -33,7 +33,7 @@ const startReminderScheduler = () => {
         return;
     }
 
-    // Runs every day at 8:00 AM (server local time)
+    // Runs every day at 8:00 AM IST.
     cron.schedule('0 8 * * *', async () => {
         console.log('⏰ Running daily reminder scheduler...');
 

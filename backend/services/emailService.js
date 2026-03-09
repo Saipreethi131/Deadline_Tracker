@@ -1,5 +1,7 @@
 const nodemailer = require('nodemailer');
 
+const allowSelfSignedEmailTls = process.env.EMAIL_ALLOW_SELF_SIGNED_TLS === 'true';
+
 /**
  * Check whether the email environment variables are configured.
  * Returns true only when both EMAIL_USER and EMAIL_PASS have real values.
@@ -22,16 +24,21 @@ const createTransporter = () => {
     );
   }
 
-  return nodemailer.createTransport({
+  const transportConfig = {
     service: 'gmail',
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS, // Use Gmail App Password
     },
-    tls: {
-      rejectUnauthorized: false, // Allow connections through firewalls/antivirus that intercept SSL
-    },
-  });
+  };
+
+  if (allowSelfSignedEmailTls) {
+    transportConfig.tls = {
+      rejectUnauthorized: false,
+    };
+  }
+
+  return nodemailer.createTransport(transportConfig);
 };
 
 /**
@@ -371,11 +378,38 @@ const sendVerificationEmail = async (toEmail, toName, otp) => {
   }
 };
 
+const sendPasswordResetEmail = async (toEmail, toName, otp) => {
+  if (!isEmailConfigured()) {
+    throw new Error('Email is not configured. Set EMAIL_USER and EMAIL_PASS in backend/.env');
+  }
+
+  const transporter = createTransporter();
+
+  await transporter.sendMail({
+    from: `"DeadlinePro" <${process.env.EMAIL_USER}>`,
+    to: toEmail,
+    subject: `${otp} is your DeadlinePro password reset code`,
+    text: `Your DeadlinePro password reset code is: ${otp}. This code will expire in 10 minutes.`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+        <h2 style="color: #4f46e5; text-align: center;">Reset Your Password</h2>
+        <p>Hello${toName ? ` ${toName}` : ''},</p>
+        <p>Use the verification code below to reset your password.</p>
+        <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #4f46e5; margin: 20px 0; border-radius: 8px;">
+          ${otp}
+        </div>
+        <p style="color: #6b7280; font-size: 14px;">This code will expire in 10 minutes. If you did not request a password reset, you can ignore this email.</p>
+      </div>
+    `,
+  });
+};
+
 module.exports = {
   sendReminderEmail,
   sendTestEmail,
   sendWelcomeEmail,
   sendCollaborationInviteEmail,
   sendVerificationEmail,
+  sendPasswordResetEmail,
   isEmailConfigured
 };

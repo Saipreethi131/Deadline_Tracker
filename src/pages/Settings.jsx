@@ -62,6 +62,7 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [reminderStatus, setReminderStatus] = useState(null);
+    const [requiresPasswordForSensitiveActions, setRequiresPasswordForSensitiveActions] = useState(true);
 
     // Profile form
     const [profileData, setProfileData] = useState({ name: '', email: '', createdAt: null });
@@ -104,6 +105,7 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
                     deadlineService.getReminderStatus().catch(() => null),
                 ]);
                 setProfileData({ name: profile.name, email: profile.email, createdAt: profile.createdAt });
+                setRequiresPasswordForSensitiveActions(profile.hasPassword !== false);
                 setReminderStatus(reminder);
             } catch {
                 toast.error('Failed to load settings');
@@ -190,6 +192,10 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
             toast.error('New password must be at least 6 characters');
             return;
         }
+        if (requiresPasswordForSensitiveActions && !passwordData.currentPassword) {
+            toast.error('Please provide your current password');
+            return;
+        }
         setSavingPassword(true);
         try {
             await authService.changePassword({
@@ -209,6 +215,22 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
     // ─── Delete Account ───
     const handleDeleteAccount = async () => {
         if (!deletePassword) {
+            if (!requiresPasswordForSensitiveActions) {
+                // OAuth-only accounts can delete without password.
+                setDeleting(true);
+                try {
+                    await authService.deleteAccount('');
+                    toast.success('Account deleted. Goodbye! 👋');
+                    logout();
+                    navigate('/login');
+                } catch (error) {
+                    const msg = error.response?.data?.message || 'Failed to delete account';
+                    toast.error(msg);
+                } finally {
+                    setDeleting(false);
+                }
+                return;
+            }
             toast.error('Please enter your password to confirm');
             return;
         }
@@ -401,10 +423,19 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
                     {/* ─── Change Password ─── */}
                     <SectionCard
                         icon={FaKey}
-                        title="Change Password"
-                        description="Update your login password"
+                        title={requiresPasswordForSensitiveActions ? 'Change Password' : 'Set Password'}
+                        description={
+                            requiresPasswordForSensitiveActions
+                                ? 'Update your login password'
+                                : 'Create a password to enable manual email/password login'
+                        }
                     >
                         <form onSubmit={handlePasswordChange} className="space-y-4">
+                            {!requiresPasswordForSensitiveActions && (
+                                <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-100 dark:border-indigo-500/20 text-xs text-indigo-700 dark:text-indigo-300">
+                                    Your account currently uses Google sign-in only. Set a password below if you also want to sign in manually with email and password.
+                                </div>
+                            )}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                                     Current Password
@@ -420,7 +451,8 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
                                         onChange={(e) => setPasswordData(p => ({ ...p, currentPassword: e.target.value }))}
                                         className="form-input pl-9 pr-3.5"
                                         placeholder="••••••••"
-                                        required
+                                        required={requiresPasswordForSensitiveActions}
+                                        disabled={!requiresPasswordForSensitiveActions}
                                     />
                                 </div>
                             </div>
@@ -543,14 +575,20 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
                                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
                                         <FaLock size={13} />
                                     </div>
-                                    <input
-                                        id="delete-password"
-                                        type="password"
-                                        value={deletePassword}
-                                        onChange={(e) => setDeletePassword(e.target.value)}
-                                        className="form-input pl-9 pr-3.5"
-                                        placeholder="Enter your password to confirm"
-                                    />
+                                    {requiresPasswordForSensitiveActions ? (
+                                        <input
+                                            id="delete-password"
+                                            type="password"
+                                            value={deletePassword}
+                                            onChange={(e) => setDeletePassword(e.target.value)}
+                                            className="form-input pl-9 pr-3.5"
+                                            placeholder="Enter your password to confirm"
+                                        />
+                                    ) : (
+                                        <div className="form-input pl-9 pr-3.5 flex items-center text-sm text-gray-500 dark:text-gray-400">
+                                            This account uses Google sign-in. No password confirmation is required.
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="flex justify-end gap-3">
                                     <button
@@ -562,7 +600,7 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
                                     <button
                                         id="confirm-delete-btn"
                                         onClick={handleDeleteAccount}
-                                        disabled={deleting || !deletePassword}
+                                        disabled={deleting || (requiresPasswordForSensitiveActions && !deletePassword)}
                                         className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                                     >
                                         <FaTrashAlt size={12} />

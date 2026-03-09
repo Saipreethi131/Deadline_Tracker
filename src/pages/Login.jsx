@@ -2,28 +2,14 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaEnvelope, FaLock, FaArrowRight, FaClock } from 'react-icons/fa';
-import { GoogleLogin } from '@react-oauth/google';
 import CustomGoogleAuth from '../components/CustomGoogleAuth';
-import { toast } from 'react-toastify';
 
 const Login = () => {
     const [formData, setFormData] = useState({ email: '', password: '' });
     const { email, password } = formData;
-    const { login, googleLogin, user, loading } = useAuth();
+    const { login, user, loading } = useAuth();
     const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
-
-    const handleGoogleSuccess = async (credentialResponse) => {
-        try {
-            await googleLogin(credentialResponse.credential);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleGoogleError = () => {
-        toast.error('Google Sign-In failed.');
-    };
 
     useEffect(() => {
         if (user) navigate('/');
@@ -127,6 +113,13 @@ const Login = () => {
                                 <>Sign in <FaArrowRight size={13} /></>
                             )}
                         </button>
+
+                        <Link
+                            to="/forgot-password"
+                            className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline"
+                        >
+                            Forgot password?
+                        </Link>
                     </form>
 
                     <div className="mt-6 flex items-center justify-center">

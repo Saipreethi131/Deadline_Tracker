@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { FaUser, FaEnvelope, FaLock, FaArrowRight, FaClock } from 'react-icons/fa';
-import { GoogleLogin } from '@react-oauth/google';
 import CustomGoogleAuth from '../components/CustomGoogleAuth';
 import { toast } from 'react-toastify';
 
@@ -15,21 +14,9 @@ const Register = () => {
     });
 
     const { name, email, password, confirmPassword } = formData;
-    const { register, googleLogin, user, loading } = useAuth();
+    const { register, user, loading } = useAuth();
     const navigate = useNavigate();
     const [submitting, setSubmitting] = useState(false);
-
-    const handleGoogleSuccess = async (credentialResponse) => {
-        try {
-            await googleLogin(credentialResponse.credential);
-        } catch (error) {
-            console.error(error);
-        }
-    };
-
-    const handleGoogleError = () => {
-        toast.error('Google Sign-In failed.');
-    };
 
     useEffect(() => {
         if (user) navigate('/');
@@ -94,21 +81,21 @@ const Register = () => {
                 {/* Card */}
                 <div className="bg-white dark:bg-gray-800/80 backdrop-blur-sm rounded-3xl shadow-xl shadow-gray-200/60 dark:shadow-gray-900/60 border border-gray-100 dark:border-gray-700/60 p-8">
                     <form onSubmit={onSubmit} className="space-y-4">
-                        {fields.map(({ id, name, type, icon: Icon, placeholder, label, value }) => (
-                            <div key={name}>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{label}</label>
+                        {fields.map((field) => (
+                            <div key={field.name}>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">{field.label}</label>
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-gray-400">
-                                        <Icon size={13} />
+                                        {field.icon({ size: 13 })}
                                     </div>
                                     <input
-                                        id={id}
-                                        name={name}
-                                        type={type}
+                                        id={field.id}
+                                        name={field.name}
+                                        type={field.type}
                                         required
-                                        value={value}
+                                        value={field.value}
                                         onChange={onChange}
-                                        placeholder={placeholder}
+                                        placeholder={field.placeholder}
                                         className="form-input pl-9 pr-3.5"
                                     />
                                 </div>
@@ -136,6 +123,10 @@ const Register = () => {
                     <div className="mt-6 flex justify-center w-full">
                         <CustomGoogleAuth mode="signup" />
                     </div>
+
+                    <p className="text-center text-xs text-amber-600 dark:text-amber-400 mt-2">
+                        Google sign-in is for existing accounts. Create your account with email/password first.
+                    </p>
 
                     <p className="text-center text-sm text-gray-500 dark:text-gray-400 mt-6">
                         Already have an account?{' '}

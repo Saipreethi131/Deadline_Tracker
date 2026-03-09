@@ -25,12 +25,24 @@ const verifyEmailChange = async (otpData) => {
     return data;
 };
 
+const requestPasswordReset = async (email) => {
+    const { data } = await API.post('/auth/forgot-password', { email });
+    return data;
+};
+
+const resetPassword = async (payload) => {
+    const { data } = await API.post('/auth/reset-password', payload);
+    return data;
+};
+
 const authService = {
     getProfile,
     updateProfile,
     changePassword,
     deleteAccount,
     verifyEmailChange,
+    requestPasswordReset,
+    resetPassword,
 };
 
 export default authService;

@@ -5,7 +5,7 @@ const User = require('../models/User');
 // @route   GET /api/auth/profile
 // @access  Private
 const getProfile = asyncHandler(async (req, res) => {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id);
     if (!user) {
         res.status(404);
         throw new Error('User not found');
@@ -15,11 +15,15 @@ const getProfile = asyncHandler(async (req, res) => {
         name: user.name,
         email: user.email,
         createdAt: user.createdAt,
+        hasPassword: !!user.password,
     });
 });
 
 const OTP = require('../models/OTP');
-const { sendVerificationEmail } = require('../services/emailService');
+const { sendVerificationEmail, isEmailConfigured } = require('../services/emailService');
+const normalizeEmail = (email) => (email || '').trim().toLowerCase();
+const OTP_RESEND_COOLDOWN_SECONDS = 60;
+const OTP_MAX_ATTEMPTS = 5;
 
 // @desc    Update user profile (name, email)
 // @route   PUT /api/auth/profile
@@ -38,8 +42,13 @@ const updateProfile = asyncHandler(async (req, res) => {
     }
 
     // Handle Email Update with OTP Verification
-    if (req.body.email && req.body.email.toLowerCase() !== user.email) {
-        const newEmail = req.body.email.toLowerCase();
+    if (req.body.email && normalizeEmail(req.body.email) !== user.email) {
+        const newEmail = normalizeEmail(req.body.email);
+
+        if (!isEmailConfigured()) {
+            res.status(503);
+            throw new Error('Email verification is currently unavailable. Please try again later.');
+        }
 
         // Validate email format
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,25 +64,39 @@ const updateProfile = asyncHandler(async (req, res) => {
             throw new Error('Email already in use');
         }
 
+        // Basic rate-limit: avoid OTP spam by enforcing a short resend cooldown.
+        const latestOtp = await OTP.findOne({ user: user._id, purpose: 'email-change' }).sort({ createdAt: -1 });
+        if (latestOtp) {
+            const secondsSinceLastOtp = Math.floor((Date.now() - latestOtp.createdAt.getTime()) / 1000);
+            if (secondsSinceLastOtp < OTP_RESEND_COOLDOWN_SECONDS) {
+                res.status(429);
+                throw new Error(
+                    `Please wait ${OTP_RESEND_COOLDOWN_SECONDS - secondsSinceLastOtp}s before requesting another verification code.`
+                );
+            }
+        }
+
         // Generate 6 digit OTP
         const otpStr = Math.floor(100000 + Math.random() * 900000).toString();
 
         // Delete any existing OTP for this user
-        await OTP.deleteMany({ user: user._id });
+        await OTP.deleteMany({ user: user._id, purpose: 'email-change' });
 
         // Save new OTP
         await OTP.create({
             user: user._id,
             email: newEmail,
-            otp: otpStr
+            otp: otpStr,
+            purpose: 'email-change'
         });
 
         // Send OTP via email to the new address
         try {
             await sendVerificationEmail(newEmail, user.name, otpStr);
         } catch (emailErr) {
-            console.error('Failed to send OTP email:', emailErr.message);
-            // Still continue - the OTP is saved and can be resent
+            await OTP.deleteMany({ user: user._id, email: newEmail, purpose: 'email-change' });
+            res.status(503);
+            throw new Error('Failed to send verification code. Please try again.');
         }
 
         // Save name if changed, but keep old email for now
@@ -124,16 +147,32 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
     }
 
     // Find the latest OTP for this user
-    const otpRecord = await OTP.findOne({ user: user._id }).sort({ createdAt: -1 });
+    const otpRecord = await OTP.findOne({ user: user._id, purpose: 'email-change' }).sort({ createdAt: -1 });
 
     if (!otpRecord) {
         res.status(400);
         throw new Error('Verification code expired or not found. Please try again.');
     }
 
+    if (otpRecord.attempts >= OTP_MAX_ATTEMPTS) {
+        await OTP.deleteMany({ user: user._id, purpose: 'email-change' });
+        res.status(429);
+        throw new Error('Too many incorrect attempts. Please request a new verification code.');
+    }
+
     if (otpRecord.otp !== otp) {
+        otpRecord.attempts += 1;
+        await otpRecord.save();
+
+        const remaining = OTP_MAX_ATTEMPTS - otpRecord.attempts;
+        if (remaining <= 0) {
+            await OTP.deleteMany({ user: user._id, purpose: 'email-change' });
+            res.status(429);
+            throw new Error('Too many incorrect attempts. Please request a new verification code.');
+        }
+
         res.status(400);
-        throw new Error('Invalid verification code');
+        throw new Error(`Invalid verification code. ${remaining} attempt(s) remaining.`);
     }
 
     // Verify successful - Update email
@@ -150,7 +189,7 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
     const updatedUser = await user.save();
 
     // Delete the used OTP record
-    await OTP.deleteMany({ user: user._id });
+    await OTP.deleteMany({ user: user._id, purpose: 'email-change' });
 
     // Generate fresh token
     const jwt = require('jsonwebtoken');

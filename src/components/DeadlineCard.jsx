@@ -14,7 +14,8 @@ const DeadlineCard = ({ deadline, currentUser, onEdit, onDelete, onStatusChange,
     const isCompleted = deadline.status === 'completed';
 
     const currentUserId = currentUser?.id || currentUser?._id;
-    const isOwner = deadline.user === currentUserId;
+    const deadlineOwnerId = deadline.user?._id || deadline.user;
+    const isOwner = deadlineOwnerId === currentUserId;
     const isPendingInvite = deadline.collaborators?.some(
         c => c.user?._id === currentUserId && c.status === 'pending'
     );

@@ -207,8 +207,28 @@ const updateDeadline = asyncHandler(async (req, res) => {
         throw new Error('User not authorized');
     }
 
-    const updatedDeadline = await Deadline.findByIdAndUpdate(req.params.id, req.body, {
+    const ownerFields = [
+        'title',
+        'description',
+        'category',
+        'customCategoryName',
+        'deadlineDate',
+        'status',
+        'priority',
+        'reminderEnabled',
+        'notes',
+        'subtasks',
+    ];
+    const collaboratorFields = ['status', 'notes', 'subtasks'];
+    const allowedFields = role === 'owner' ? ownerFields : collaboratorFields;
+
+    const updates = Object.fromEntries(
+        Object.entries(req.body).filter(([key]) => allowedFields.includes(key))
+    );
+
+    const updatedDeadline = await Deadline.findByIdAndUpdate(req.params.id, updates, {
         new: true,
+        runValidators: true,
     });
 
     res.status(200).json(updatedDeadline);
@@ -337,7 +357,8 @@ const shareDeadline = asyncHandler(async (req, res) => {
     const { email } = req.body;
     if (!email) { res.status(400); throw new Error('Email is required'); }
 
-    const targetUser = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+    const targetUser = await User.findOne({ email: normalizedEmail });
     if (!targetUser) {
         res.status(404);
         throw new Error('No DeadlinePro user found with that email. They need to sign up first.');

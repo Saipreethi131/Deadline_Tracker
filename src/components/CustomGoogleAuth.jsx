@@ -26,7 +26,7 @@ const CustomGoogleAuth = ({ mode = 'signin' }) => {
             className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-200 shadow-sm"
         >
             <FcGoogle className="text-xl" />
-            <span>{mode === 'signup' ? 'Sign up with Google' : 'Sign in with Google'}</span>
+            <span>{mode === 'signup' ? 'Continue with Google' : 'Sign in with Google'}</span>
         </button>
     );
 };
