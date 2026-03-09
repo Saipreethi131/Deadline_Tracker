@@ -173,14 +173,9 @@ const verifyEmailChange = asyncHandler(async (req, res) => {
 const changePassword = asyncHandler(async (req, res) => {
     const { currentPassword, newPassword } = req.body;
 
-    if (!currentPassword || !newPassword) {
+    if (!newPassword) {
         res.status(400);
-        throw new Error('Please provide current and new password');
-    }
-
-    if (newPassword.length < 6) {
-        res.status(400);
-        throw new Error('New password must be at least 6 characters');
+        throw new Error('Please provide a new password');
     }
 
     const user = await User.findById(req.user.id);
@@ -190,11 +185,17 @@ const changePassword = asyncHandler(async (req, res) => {
         throw new Error('User not found');
     }
 
-    // Verify current password
-    const isMatch = await user.matchPassword(currentPassword);
-    if (!isMatch) {
-        res.status(401);
-        throw new Error('Current password is incorrect');
+    // Verify current password only if the user has one
+    if (user.password) {
+        if (!currentPassword) {
+            res.status(400);
+            throw new Error('Please provide your current password');
+        }
+        const isMatch = await user.matchPassword(currentPassword);
+        if (!isMatch) {
+            res.status(401);
+            throw new Error('Current password is incorrect');
+        }
     }
 
     user.password = newPassword;
@@ -209,21 +210,24 @@ const changePassword = asyncHandler(async (req, res) => {
 const deleteAccount = asyncHandler(async (req, res) => {
     const { password } = req.body;
 
-    if (!password) {
-        res.status(400);
-        throw new Error('Please provide your password to confirm deletion');
-    }
-
     const user = await User.findById(req.user.id);
     if (!user) {
         res.status(404);
         throw new Error('User not found');
     }
 
-    const isMatch = await user.matchPassword(password);
-    if (!isMatch) {
-        res.status(401);
-        throw new Error('Password is incorrect');
+    // Verify password only if the user has one
+    if (user.password) {
+        if (!password) {
+            res.status(400);
+            throw new Error('Please provide your password to confirm deletion');
+        }
+
+        const isMatch = await user.matchPassword(password);
+        if (!isMatch) {
+            res.status(401);
+            throw new Error('Password is incorrect');
+        }
     }
 
     // Delete all user's deadlines

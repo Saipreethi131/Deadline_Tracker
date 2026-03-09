@@ -18,8 +18,13 @@ const userSchema = mongoose.Schema(
         },
         password: {
             type: String,
-            required: [true, 'Please add a password'],
+            required: false,
             minlength: 6,
+        },
+        googleId: {
+            type: String,
+            unique: true,
+            sparse: true,
         },
     },
     {
@@ -39,6 +44,9 @@ userSchema.pre('save', async function (next) {
 
 // Match user entered password to hashed password in database
 userSchema.methods.matchPassword = async function (enteredPassword) {
+    if (!this.password) {
+        return false;
+    }
     return await bcrypt.compare(enteredPassword, this.password);
 };
 

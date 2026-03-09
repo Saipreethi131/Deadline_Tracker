@@ -26,6 +26,11 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new Error('User already exists');
     }
 
+    if (!password) {
+        res.status(400);
+        throw new Error('Please add a password for manual registration');
+    }
+
     const user = await User.create({
         name,
         email,
@@ -57,7 +62,18 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const user = await User.findOne({ email });
 
-    if (user && (await user.matchPassword(password))) {
+    if (!user) {
+        res.status(401);
+        throw new Error('Invalid email or password');
+    }
+
+    // Check if the user has a password (might be a Google-only account)
+    if (!user.password) {
+        res.status(401);
+        throw new Error('This account was created with Google. Please sign in with Google.');
+    }
+
+    if (await user.matchPassword(password)) {
         res.json({
             _id: user._id,
             name: user.name,
@@ -108,21 +124,30 @@ const googleAuth = asyncHandler(async (req, res) => {
         }
     }
 
-    const { email, name } = payload;
+    const { email, name, sub: googleId } = payload;
 
-    let user = await User.findOne({ email });
+    // 1. Try to find user by googleId
+    let user = await User.findOne({ googleId });
 
+    // 2. If not found, try to find by email
     if (!user) {
-        // Create user if they don't exist
-        const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-        user = await User.create({
-            name,
-            email,
-            password: randomPassword,
-        });
+        user = await User.findOne({ email });
 
-        // Send welcome email for new Google sign-ups (non-blocking)
-        sendWelcomeEmail(user.email, user.name);
+        if (user) {
+            // Found by email but no googleId - link them
+            user.googleId = googleId;
+            await user.save();
+        } else {
+            // 3. Create new user if they don't exist at all
+            user = await User.create({
+                name,
+                email,
+                googleId,
+            });
+
+            // Send welcome email for new Google sign-ups (non-blocking)
+            sendWelcomeEmail(user.email, user.name);
+        }
     }
 
     res.json({
