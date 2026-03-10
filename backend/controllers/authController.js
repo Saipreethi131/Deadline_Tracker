@@ -119,7 +119,7 @@ const googleAuth = asyncHandler(async (req, res) => {
             const response = await axios.get(`https://www.googleapis.com/oauth2/v3/userinfo?access_token=${token}`);
             payload = response.data;
         } catch (err) {
-            console.error('Google Access Token verification failed:', err.response?.data || err.message);
+            console.error('Google Access Token verification failed:', err.message);
             res.status(401);
             throw new Error('Invalid Google Access Token (V4-NEW-CODE)');
         }

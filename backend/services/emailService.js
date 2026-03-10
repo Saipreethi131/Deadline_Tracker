@@ -340,7 +340,7 @@ const sendCollaborationInviteEmail = async (toEmail, toName, fromName, deadlineT
 
 const sendVerificationEmail = async (toEmail, toName, otp) => {
   if (!isEmailConfigured()) {
-    console.log(`⚠️  Email not configured – skipping OTP for ${toEmail} (OTP: ${otp})`);
+    console.log(`⚠️  Email not configured – skipping OTP for ${toEmail}`);
     return;
   }
 
