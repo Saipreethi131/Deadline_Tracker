@@ -5,6 +5,8 @@ A full-stack deadline management platform built with **React**, **Node.js**, **E
 ![Stack](https://img.shields.io/badge/Stack-React%20%7C%20Node.js%20%7C%20MongoDB-4f46e5?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
+### [Live Demo →](https://deadline-tracker-lac.vercel.app)
+
 ---
 
 ## Features
